@@ -11,37 +11,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-interface Resident {
-  id: string;
-  name: string;
-  cpf: string;
-  rg: string;
-  phone: string;
-  email: string;
-  address: string;
-  housing: "owned" | "rented";
-  residents: number;
-  cid?: string;
-  disabilityDescription?: string;
-  elderly: boolean;
-  elderlyAge?: number;
-  hasDisability: boolean;
-  isForeigner: boolean;
-  foreignDocNumber?: string;
-  hasGovernmentAssistance: boolean;
-  governmentAssistance: Array<{
-    type: string;
-    value: string;
-  }>;
-  dependents: Array<{
-    ageRange: string;
-    hasDisability: boolean;
-    cid?: string;
-    disabilityDescription?: string;
-  }>;
-  createdAt: string;
-  updatedAt?: string;
-}
+import { Resident } from "@/lib/types";
+import { createResident, updateResident } from "@/lib/residents";
 
 type FormData = Omit<Resident, "id" | "createdAt" | "updatedAt">;
 
@@ -67,6 +38,7 @@ export default function ResidentForm() {
     dependents: [],
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const editingResident = localStorage.getItem("editingResident");
@@ -78,36 +50,30 @@ export default function ResidentForm() {
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    const residents = JSON.parse(localStorage.getItem("residents") || "[]");
-    const data = {
-      ...formData,
-      residents: Number(formData.residents),
-      elderlyAge: formData.elderly ? Number(formData.elderlyAge) : undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    if (editingId) {
-      const updatedResidents = residents.map((resident: Resident) =>
-        resident.id === editingId
-          ? { ...data, id: editingId, updatedAt: new Date().toISOString() }
-          : resident,
-      );
-      localStorage.setItem("residents", JSON.stringify(updatedResidents));
-    } else {
-      const newResident = {
-        ...data,
-        id: crypto.randomUUID(),
+    try {
+      const data = {
+        ...formData,
+        residents: Number(formData.residents),
+        elderlyAge: formData.elderly ? Number(formData.elderlyAge) : undefined,
       };
-      localStorage.setItem(
-        "residents",
-        JSON.stringify([...residents, newResident]),
-      );
-    }
 
-    navigate("/reports");
+      if (editingId) {
+        await updateResident(editingId, data);
+      } else {
+        await createResident(data);
+      }
+
+      navigate("/reports");
+    } catch (error) {
+      console.error("Error saving resident:", error);
+      alert("Ocorreu um erro ao salvar os dados. Por favor, tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (field: string, value: string | boolean | number) => {

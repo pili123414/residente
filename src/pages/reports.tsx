@@ -31,37 +31,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-interface Resident {
-  id: string;
-  name: string;
-  cpf: string;
-  rg: string;
-  phone: string;
-  email: string;
-  address: string;
-  housing: "owned" | "rented";
-  residents: number;
-  cid?: string;
-  disabilityDescription?: string;
-  elderly: boolean;
-  elderlyAge?: number;
-  hasDisability: boolean;
-  isForeigner: boolean;
-  foreignDocNumber?: string;
-  hasGovernmentAssistance: boolean;
-  governmentAssistance: Array<{
-    type: string;
-    value: string;
-  }>;
-  dependents: Array<{
-    ageRange: string;
-    hasDisability: boolean;
-    cid?: string;
-    disabilityDescription?: string;
-  }>;
-  createdAt: string;
-  updatedAt?: string;
-}
+import { supabase } from "@/lib/supabase";
+import { Resident } from "@/lib/types";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -79,14 +50,26 @@ export default function ReportsPage() {
     fetchResidents();
   }, []);
 
-  const fetchResidents = () => {
-    const data = JSON.parse(localStorage.getItem("residents") || "[]");
-    setResidents(
-      data.sort(
-        (a: Resident, b: Resident) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      ),
-    );
+  const fetchResidents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("residents")
+        .select("*")
+        .order("createdAt", { ascending: false });
+
+      if (error) throw error;
+      setResidents(data || []);
+    } catch (error) {
+      console.error("Error fetching residents:", error);
+      // Fallback to localStorage if Supabase fails
+      const localData = JSON.parse(localStorage.getItem("residents") || "[]");
+      setResidents(
+        localData.sort(
+          (a: Resident, b: Resident) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ),
+      );
+    }
   };
 
   const filteredResidents = residents.filter((resident) => {
@@ -267,7 +250,7 @@ export default function ReportsPage() {
           doc.setFontSize(10);
           doc.setTextColor(102, 102, 102);
           doc.text(
-            `Página ${doc.internal.getNumberOfPages()}`,
+            `Página ${doc.getCurrentPageInfo().pageNumber}`,
             data.settings.margin.left,
             doc.internal.pageSize.height - 20,
           );
@@ -281,7 +264,7 @@ export default function ReportsPage() {
       });
 
       // Add detailed information for each resident
-      let yPos = doc.lastAutoTable.finalY + 20;
+      let yPos = (doc as any).lastAutoTable?.finalY + 20 || 110;
 
       formattedData.forEach((resident, index) => {
         // Check if we need a new page
@@ -309,7 +292,7 @@ export default function ReportsPage() {
           margin: { left: 40, right: 40 },
         });
 
-        yPos = doc.lastAutoTable.finalY + 30;
+        yPos = (doc as any).lastAutoTable?.finalY + 30 || yPos + 30;
       });
 
       // Save the PDF
@@ -325,14 +308,34 @@ export default function ReportsPage() {
     navigate("/residents");
   };
 
-  const handleDelete = (id: string) => {
-    const residents = JSON.parse(localStorage.getItem("residents") || "[]");
-    const updatedResidents = residents.filter(
-      (resident: Resident) => resident.id !== id,
-    );
-    localStorage.setItem("residents", JSON.stringify(updatedResidents));
-    fetchResidents();
-    setDeleteDialog({ isOpen: false, id: "" });
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from("residents").delete().eq("id", id);
+
+      if (error) throw error;
+
+      // Also update localStorage as backup
+      const residents = JSON.parse(localStorage.getItem("residents") || "[]");
+      const updatedResidents = residents.filter(
+        (resident: Resident) => resident.id !== id,
+      );
+      localStorage.setItem("residents", JSON.stringify(updatedResidents));
+
+      fetchResidents();
+      setDeleteDialog({ isOpen: false, id: "" });
+    } catch (error) {
+      console.error("Error deleting resident:", error);
+
+      // Fallback to localStorage if Supabase fails
+      const residents = JSON.parse(localStorage.getItem("residents") || "[]");
+      const updatedResidents = residents.filter(
+        (resident: Resident) => resident.id !== id,
+      );
+      localStorage.setItem("residents", JSON.stringify(updatedResidents));
+
+      fetchResidents();
+      setDeleteDialog({ isOpen: false, id: "" });
+    }
   };
 
   return (

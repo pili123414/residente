@@ -1,30 +1,40 @@
-# React + TypeScript + Vite
+# Cadastro Municipal de Residentes
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de cadastro de residentes para a Prefeitura Municipal de São José do Vale do Rio Preto.
 
-Currently, two official plugins are available:
+## Configuração do Supabase
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Crie uma conta no [Supabase](https://supabase.com)
+2. Crie um novo projeto
+3. Vá para SQL Editor e execute o script SQL localizado em `supabase/schema.sql`
+4. Vá para Project Settings > API e copie a URL e a chave anônima
+5. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+```
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+VITE_TEMPO=true
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Configuração da Vercel
+
+1. Faça login na [Vercel](https://vercel.com)
+2. Importe o repositório do GitHub
+3. Adicione as variáveis de ambiente:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Clique em Deploy
+
+## Desenvolvimento Local
+
+```bash
+npm install
+npm run dev
+```
+
+## Funcionalidades
+
+- Cadastro de moradores
+- Relatórios e exportação de dados
+- Autenticação de usuários
+- Sincronização em tempo real entre dispositivos

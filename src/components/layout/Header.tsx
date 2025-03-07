@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { UserCircle } from "lucide-react";
 
 export default function Header() {
@@ -15,9 +14,9 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon">
+          <div className="flex items-center gap-2">
             <UserCircle className="h-5 w-5" />
-          </Button>
+          </div>
         </div>
       </div>
     </header>
